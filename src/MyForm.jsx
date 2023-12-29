@@ -15,19 +15,15 @@ import {
 } from "@chakra-ui/react";
 import { useState } from "react";
 import Papa from 'papaparse';
-import GetEmailValues from "./GetEmailValues";
-
+import Axios from 'axios';  // Import Axios
 
 export default function MyForm() {
-  const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const [extractedEmails, setExtractedEmails] = useState({});
-  const [selectedEmail, setSelectedEmail] = useState("");
-  const [isEmailVisiable,setIsEmailVisible] = useState(false);
-  const [isEmailInputVisible, setIsEmailInputVisible] = useState(true);
-  var separatedEmails = [];
-  
+  const [extractedEmails, setExtractedEmails] = useState([]);
+  const [selectedEmail, setSelectedEmail] = useState([]);
+  const [isEmailVisible, setIsEmailVisible] = useState(false);
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
 
@@ -40,87 +36,40 @@ export default function MyForm() {
   };
 
   const handleParseComplete = (result) => {
-      console.log("Result after persaing",result)
-    const emails = result.data.map((row) => row); // Adjust the key based on your Excel structure
+    const emails = result.data.map((row) => row.email); // Adjust the key based on your Excel structure
     setExtractedEmails(emails);
   };
 
-const handleEmailDelete = (email) => {
-  console.log("Extracted Emails for delete",email);
-  if (extractedEmails.length > 0) {
-    const allEmails = extractedEmails.map((email) => email.email).join(';');
-    var onlyEmails = allEmails.split(';');
-    console.log(onlyEmails);
-    const updatedEmail = onlyEmails.filter((d)=> d !== email);
-    console.log(updatedEmail);
-    setSelectedEmail(updatedEmail);
-  }
-
-  // Check if the index is provided
-//   if (index >= 0 && index < extractedEmails.length) {
-//     // Create a copy of the array
-//     const updatedEmails = [...extractedEmails];
-
-//     // Use splice to remove the email at the specified index
-//     updatedEmails.splice(index, 1);
-
-//     console.log("Updated Emails", updatedEmails);
-
-//     // Set the state with the updated array
-//     setExtractedEmails(updatedEmails);
-//   } else {
-//     console.log("Invalid or missing index");
-//   }
-};
-
-  
-  const handleExtractClick = () => {
-    if (extractedEmails.length > 0) {
-      const allEmails = extractedEmails.map((email) => email.email).join(';');
-      separatedEmails = allEmails.split(';');
-      setSelectedEmail(separatedEmails);
-      setIsEmailVisible(true);
-      console.log('Extracted Emails:', separatedEmails,selectedEmail);
-    }
-    return separatedEmails;
+  const handleEmailDelete = (email) => {
+    const updatedEmails = selectedEmail.filter((d) => d !== email);
+    setSelectedEmail(updatedEmails);
   };
 
-  console.log("Separated emails outside the function",separatedEmails)
-  
+  const handleExtractClick = () => {
+    setSelectedEmail(extractedEmails);
+    setIsEmailVisible(true);
+  };
+
   const baseUrl = "https://email2-wsil.onrender.com";
 
   const sendEmail = async () => {
-    let dataSend = {
-      email: selectedEmail, // Use selectedEmail instead of email
-      subject: subject,
-      message: message,
-    };
-  
-    console.log('Data to be sent:', dataSend);
-  
-    const resValue = await fetch(`${baseUrl}/emails/sendEmail`, {
-      method: "POST",
-      body: JSON.stringify(dataSend),
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      credentials: 'include',
-      
-    })
-    .then((res) => {
-      console.log('Response from server:', res);
-  
-      if (res.status > 199 && res.status < 300) {
+    try {
+      const response = await Axios.post(`${baseUrl}/emails/sendEmail`, {
+        email: selectedEmail.join(';'),
+        subject,
+        message,
+      }, { withCredentials: true });
+
+      console.log('Response from server:', response.data);
+
+      if (response.status >= 200 && response.status < 300) {
         alert("Send Successfully !");
       }
-    })
-    .catch((error) => {
+    } catch (error) {
       console.error('Error sending email:', error);
-    });
-    console.log('.......res',resValue);
+    }
   };
- 
+
   return (
     <Flex
       minH={"100vh"}
@@ -139,59 +88,57 @@ const handleEmailDelete = (email) => {
           p={8}
         >
           <Stack spacing={4}>
-          <FormControl id="email">
-            <FormLabel>Add Your file</FormLabel>
-            <input
-              type="file"
-              placeholder="Receiver's Email Address"
-              onChange={handleFileChange}
-              style={{
-                padding: '5px',
-                border: '1px solid gray',
+            <FormControl id="email">
+              <FormLabel>Add Your file</FormLabel>
+              <input
+                type="file"
+                placeholder="Receiver's Email Address"
+                onChange={handleFileChange}
+                style={{
+                  padding: '5px',
+                  border: '1px solid gray',
+                  borderRadius: '5px',
+                  float: 'left',
+                  width: '85%',
+                  height: '37px',
+                }}
+              />
+              <button style={{
+                background: 'white',
+                border: '1px solid #1a202c',
                 borderRadius: '5px',
-                float: 'left',
-                width: '85%',
-                height: '37px',
+                height: '35px',
+                width: '13%'
+              }} onClick={handleExtractClick}><i className="fa-solid fa-paper-plane"></i></button>
+              <br />
+              <br />
+              <div className="receiver_email" style={{
+                background: '#8080804f',
+                borderRadius: '5px',
+                height: '100px',
+                paddingTop: '8px',
+                textAlign: 'left',
+                paddingLeft: '8px',
+                overflow: 'scroll',
               }}
-            />
-            <button style={{
-              background: 'white',
-              border: '1px solid #1a202c',
-              borderRadius: '5px',
-              height: '35px',
-              width: '13%'
-            }} onClick={handleExtractClick}><i class="fa-solid fa-paper-plane"></i></button>
-            <br/>
-            <br/>
-            <div className="receiver_email" style={{
-              background: '#8080804f',
-              borderRadius: '5px',
-              height: '100px',
-              paddingTop: '8px',
-              textAlign: 'left',
-              paddingLeft: '8px',
-              overflow: 'scroll',
-            }}
-            >
-            {
-              (selectedEmail && isEmailVisiable) ? (
-                <>
-                  {selectedEmail.map((email, index) => {
-                    console.log("Email & index value in child component", email,index); // Logging the value
-                    return (
-                      <GetEmailValues key={index} value={email} onDelete={() => handleEmailDelete(email)} />
-                    );
-                  })}
-                </>
-              ) : (
-                <>
-                  <h3 style={{ color: '#666' }}>Get Receiver's Email</h3>
-                </>
-              )
-            }
-            
-            
-            </div>
+              >
+                {
+                  (selectedEmail && isEmailVisible) ? (
+                    <>
+                      {selectedEmail.map((email, index) => {
+                        console.log("Email & index value in child component", email, index); // Logging the value
+                        return (
+                          <GetEmailValues key={index} value={email} onDelete={() => handleEmailDelete(email)} />
+                        );
+                      })}
+                    </>
+                  ) : (
+                    <>
+                      <h3 style={{ color: '#666' }}>Get Receiver's Email</h3>
+                    </>
+                  )
+                }
+              </div>
             </FormControl>
             <FormControl id="email" style={{ display: isEmailInputVisible ? 'none' : 'none' }}>
               <FormLabel>Email address</FormLabel>
@@ -199,7 +146,7 @@ const handleEmailDelete = (email) => {
                 type="email"
                 value={selectedEmail}
                 placeholder="Receiver's Email Address"
-                onChInvalid or missing idange={(e) => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </FormControl>
             <FormControl id="email">
