@@ -15,15 +15,20 @@ import {
 } from "@chakra-ui/react";
 import { useState } from "react";
 import Papa from 'papaparse';
-import Axios from 'axios';  // Import Axios
+import GetEmailValues from "./GetEmailValues";
+import axios from "axios";
+
 
 export default function MyForm() {
+  const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const [extractedEmails, setExtractedEmails] = useState([]);
-  const [selectedEmail, setSelectedEmail] = useState([]);
-  const [isEmailVisible, setIsEmailVisible] = useState(false);
-
+  const [extractedEmails, setExtractedEmails] = useState({});
+  const [selectedEmail, setSelectedEmail] = useState("");
+  const [isEmailVisiable,setIsEmailVisible] = useState(false);
+  const [isEmailInputVisible, setIsEmailInputVisible] = useState(true);
+  var separatedEmails = [];
+  
   const handleFileChange = (e) => {
     const file = e.target.files[0];
 
@@ -36,25 +41,58 @@ export default function MyForm() {
   };
 
   const handleParseComplete = (result) => {
-    const emails = result.data.map((row) => row.email); // Adjust the key based on your Excel structure
+      console.log("Result after persaing",result)
+    const emails = result.data.map((row) => row); // Adjust the key based on your Excel structure
     setExtractedEmails(emails);
   };
 
-  const handleEmailDelete = (email) => {
-    const updatedEmails = selectedEmail.filter((d) => d !== email);
-    setSelectedEmail(updatedEmails);
-  };
+const handleEmailDelete = (email) => {
+  console.log("Extracted Emails for delete",email);
+  if (extractedEmails.length > 0) {
+    const allEmails = extractedEmails.map((email) => email.email).join(';');
+    var onlyEmails = allEmails.split(';');
+    console.log(onlyEmails);
+    const updatedEmail = onlyEmails.filter((d)=> d !== email);
+    console.log(updatedEmail);
+    setSelectedEmail(updatedEmail);
+  }
 
+  // Check if the index is provided
+//   if (index >= 0 && index < extractedEmails.length) {
+//     // Create a copy of the array
+//     const updatedEmails = [...extractedEmails];
+
+//     // Use splice to remove the email at the specified index
+//     updatedEmails.splice(index, 1);
+
+//     console.log("Updated Emails", updatedEmails);
+
+//     // Set the state with the updated array
+//     setExtractedEmails(updatedEmails);
+//   } else {
+//     console.log("Invalid or missing index");
+//   }
+};
+
+  
   const handleExtractClick = () => {
-    setSelectedEmail(extractedEmails);
-    setIsEmailVisible(true);
+    if (extractedEmails.length > 0) {
+      const allEmails = extractedEmails.map((email) => email.email).join(';');
+      separatedEmails = allEmails.split(';');
+      setSelectedEmail(separatedEmails);
+      setIsEmailVisible(true);
+      console.log('Extracted Emails:', separatedEmails,selectedEmail);
+    }
+    return separatedEmails;
   };
 
+  console.log("Separated emails outside the function",separatedEmails)
+  
   const baseUrl = "https://email2-wsil.onrender.com";
 
   const sendEmail = async () => {
     try {
-      const response = await Axios.post(`${baseUrl}/emails/sendEmail`, {
+      const response = await axios.post(`${baseUrl}/emails/sendEmail`, {
         email: selectedEmail.join(';'),
         subject,
         message,
@@ -69,7 +107,7 @@ export default function MyForm() {
       console.error('Error sending email:', error);
     }
   };
-
+ 
   return (
     <Flex
       minH={"100vh"}
@@ -88,57 +126,59 @@ export default function MyForm() {
           p={8}
         >
           <Stack spacing={4}>
-            <FormControl id="email">
-              <FormLabel>Add Your file</FormLabel>
-              <input
-                type="file"
-                placeholder="Receiver's Email Address"
-                onChange={handleFileChange}
-                style={{
-                  padding: '5px',
-                  border: '1px solid gray',
-                  borderRadius: '5px',
-                  float: 'left',
-                  width: '85%',
-                  height: '37px',
-                }}
-              />
-              <button style={{
-                background: 'white',
-                border: '1px solid #1a202c',
+          <FormControl id="email">
+            <FormLabel>Add Your file</FormLabel>
+            <input
+              type="file"
+              placeholder="Receiver's Email Address"
+              onChange={handleFileChange}
+              style={{
+                padding: '5px',
+                border: '1px solid gray',
                 borderRadius: '5px',
-                height: '35px',
-                width: '13%'
-              }} onClick={handleExtractClick}><i className="fa-solid fa-paper-plane"></i></button>
-              <br />
-              <br />
-              <div className="receiver_email" style={{
-                background: '#8080804f',
-                borderRadius: '5px',
-                height: '100px',
-                paddingTop: '8px',
-                textAlign: 'left',
-                paddingLeft: '8px',
-                overflow: 'scroll',
+                float: 'left',
+                width: '85%',
+                height: '37px',
               }}
-              >
-                {
-                  (selectedEmail && isEmailVisible) ? (
-                    <>
-                      {selectedEmail.map((email, index) => {
-                        console.log("Email & index value in child component", email, index); // Logging the value
-                        return (
-                          <GetEmailValues key={index} value={email} onDelete={() => handleEmailDelete(email)} />
-                        );
-                      })}
-                    </>
-                  ) : (
-                    <>
-                      <h3 style={{ color: '#666' }}>Get Receiver's Email</h3>
-                    </>
-                  )
-                }
-              </div>
+            />
+            <button style={{
+              background: 'white',
+              border: '1px solid #1a202c',
+              borderRadius: '5px',
+              height: '35px',
+              width: '13%'
+            }} onClick={handleExtractClick}><i class="fa-solid fa-paper-plane"></i></button>
+            <br/>
+            <br/>
+            <div className="receiver_email" style={{
+              background: '#8080804f',
+              borderRadius: '5px',
+              height: '100px',
+              paddingTop: '8px',
+              textAlign: 'left',
+              paddingLeft: '8px',
+              overflow: 'scroll',
+            }}
+            >
+            {
+              (selectedEmail && isEmailVisiable) ? (
+                <>
+                  {selectedEmail.map((email, index) => {
+                    console.log("Email & index value in child component", email,index); // Logging the value
+                    return (
+                      <GetEmailValues key={index} value={email} onDelete={() => handleEmailDelete(email)} />
+                    );
+                  })}
+                </>
+              ) : (
+                <>
+                  <h3 style={{ color: '#666' }}>Get Receiver's Email</h3>
+                </>
+              )
+            }
+            
+            
+            </div>
             </FormControl>
             <FormControl id="email" style={{ display: isEmailInputVisible ? 'none' : 'none' }}>
               <FormLabel>Email address</FormLabel>
@@ -146,7 +186,7 @@ export default function MyForm() {
                 type="email"
                 value={selectedEmail}
                 placeholder="Receiver's Email Address"
-                onChange={(e) => setEmail(e.target.value)}
+                onChInvalid or missing idange={(e) => setEmail(e.target.value)}
               />
             </FormControl>
             <FormControl id="email">
