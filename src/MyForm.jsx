@@ -98,7 +98,7 @@ const handleEmailDelete = (email) => {
   
     console.log('Data to be sent:', dataSend);
   
-    const resValue = await fetch(`${baseUrl}/sendEmail`, {
+    const resValue = await fetch(`${baseUrl}/emails/sendEmail`, {
       method: "POST",
       body: JSON.stringify(dataSend),
       headers: {
