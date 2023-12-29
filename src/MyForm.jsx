@@ -87,7 +87,7 @@ const handleEmailDelete = (email) => {
 
   console.log("Separated emails outside the function",separatedEmails)
   
-  const baseUrl = "https://emailsend.onrender.com/";
+  const baseUrl = "https://email2-wsil.onrender.com";
 
   const sendEmail = async () => {
     let dataSend = {
