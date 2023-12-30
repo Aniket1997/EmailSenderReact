@@ -92,11 +92,11 @@ const handleEmailDelete = (email) => {
 
   const sendEmail = async () => {
     try {
-      const response = await axios.post(`${baseUrl}/sendEmail`, {
+      const response = await axios.post(`${baseUrl}/email/sendEmail`, {
         email: selectedEmail.join(';'),
         subject,
         message,
-      }, { withCredentials: true });
+      }, { withCredentials: true });      
 
       console.log('Response from server:', response.data);
 
