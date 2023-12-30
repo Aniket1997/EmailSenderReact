@@ -92,7 +92,7 @@ const handleEmailDelete = (email) => {
 
   const sendEmail = async () => {
     try {
-      const response = await axios.post(`${baseUrl}/emails/sendEmail`, {
+      const response = await axios.post(`${baseUrl}/sendEmail`, {
         email: selectedEmail.join(';'),
         subject,
         message,
